@@ -25,23 +25,23 @@ public class ResaleServiceImpl implements ResaleService {
 
     @Override
     public UUID save(Resale resale) {
-        log.info("Cadastrando nova resale {}", resale);
+        log.info("Registering new resale: {}", resale);
 
         if (revendaRepository.existsByCnpj(resale.cnpj())) {
-            log.error("CNPJ {} da resale ja esta cadastrada!", resale.cnpj());
-            throw new RecordAlreadyExistsException("Resale já cadastrada!!");
+            log.error("CNPJ {} is already registered!", resale.cnpj());
+            throw new RecordAlreadyExistsException("Resale already registered!");
         }
 
         ResaleEntity resaleEntity = resaleMapper.to(resale);
         ResaleEntity save = revendaRepository.save(resaleEntity);
-        log.info("Resale {} cadastrada com sucesso!", resale);
+        log.info("Resale {} successfully registered!", resale);
 
         return save.getUuid();
     }
 
     @Override
     public List<Resale> findAll() {
-        log.info("Listando todas as revendas.");
+        log.info("Fetching all resales.");
         return revendaRepository.findAll()
                 .stream()
                 .map(resaleMapper::to)
@@ -50,14 +50,18 @@ public class ResaleServiceImpl implements ResaleService {
 
     @Override
     public Resale findByUUID(UUID uuid) {
-        log.info("Buscando resale por codigo {}", uuid);
+        log.info("Searching resale by UUID: {}", uuid);
         return revendaRepository.findByUuid(uuid)
                 .map(resaleMapper::to)
-                .orElseThrow(() -> new NotFoundException("Resale não encontrada: " + uuid));
+                .orElseThrow(() -> {
+                    log.warn("Resale not found: {}", uuid);
+                    return new NotFoundException("Resale not found: " + uuid);
+                });
     }
 
     @Override
     public List<Resale> findPendingOrdersWithoutSupplier(OrderStatus orderStatus, Integer qtdMin) {
+        log.info("Fetching pending orders with status {} and minimum quantity {}", orderStatus, qtdMin);
         return revendaRepository.findResellersForOrderIssuance(orderStatus, qtdMin)
                 .stream()
                 .map(resaleMapper::to).toList();

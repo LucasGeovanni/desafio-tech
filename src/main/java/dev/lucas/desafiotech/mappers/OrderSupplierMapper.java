@@ -1,6 +1,6 @@
 package dev.lucas.desafiotech.mappers;
 
-import dev.lucas.desafiotech.api.v1.mock.OrderAddressSupplierRequest;
+import dev.lucas.desafiotech.controller.mock.OrderAddressSupplierRequest;
 import dev.lucas.desafiotech.model.domain.Address;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;

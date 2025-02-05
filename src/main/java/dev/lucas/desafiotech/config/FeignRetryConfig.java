@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class FeignRetryConfig {
 
+    // parametrizar no propriedades int maxAttempts, long interval
     @Bean
     public Retryer feignRetryer() {
         return new CustomFeignRetryer(3, 2000);

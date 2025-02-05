@@ -28,23 +28,29 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order save(UUID resaleUuid, Order order) {
-        log.info("Criando order {} para a resale de codigo {}", order, resaleUuid);
+        log.info("Creating order {} for resale UUID: {}", order, resaleUuid);
         Resale resale = resaleService.findByUUID(resaleUuid);
         OrderEntity orderEntity = orderRepository.save(orderMapper.to(order, resale.id()));
+        log.info("Order created successfully with UUID: {}", orderEntity.getUuid());
         return orderMapper.to(orderEntity);
     }
 
     @Override
     public Order findByUUID(UUID uuid) {
-        log.info("Buscando order por codigo {}", uuid);
+        log.info("Fetching order by UUID: {}", uuid);
         return orderRepository.findByUuid(uuid)
                 .map(orderMapper::to)
-                .orElseThrow(() -> new NotFoundException("Order nao encontrado"));
+                .orElseThrow(() -> {
+                    log.warn("Order not found for UUID: {}", uuid);
+                    return new NotFoundException("Order not found");
+                });
     }
 
     @Override
     public List<Order> findByResaleUUID(UUID resaleUuid) {
-        return orderMapper.to(orderRepository.buscarOrdersPorResaleUuid(resaleUuid));
+        log.info("Fetching orders for resale UUID: {}", resaleUuid);
+        List<Order> orders = orderMapper.to(orderRepository.buscarOrdersPorResaleUuid(resaleUuid));
+        log.info("Found {} orders for resale UUID: {}", orders.size(), resaleUuid);
+        return orders;
     }
-
 }

@@ -29,45 +29,45 @@ public class IntegrationControlAspect {
     @Around("@annotation(dev.lucas.desafiotech.service.annotations.UpdateIntegration) && args(resale, ..)")
     public void validateAndUpdateResellerIntegrations(ProceedingJoinPoint joinPoint, Resale resale) throws Throwable {
 
-        log.info("Interceptando atualização de integração para revenda: {}", resale.uuid());
+        log.info("Intercepting integration update for resale UUID: {}", resale.uuid());
 
-        IntegrationControlEntity integrationControlEntity = integrationControlService.findByResaleUUID(resale.uuid());;
+        IntegrationControlEntity integrationControlEntity = integrationControlService.findByResaleUUID(resale.uuid());
 
         if (Objects.isNull(integrationControlEntity)) {
+            log.info("Creating new integration control for resale UUID: {}", resale.uuid());
             integrationControlEntity = integrationControlService.createNewIntegrationControlForReseller(resale);
         }
         try {
+            log.info("Proceeding with integration process for resale UUID: {}", resale.uuid());
             joinPoint.proceed();
             integrationControlEntity.setStatus(RequestStatus.AGUARDAR_RECEBIMENTO);
-
+            log.info("Integration process completed successfully for resale UUID: {}", resale.uuid());
         } catch (Exception ex) {
-
             RequestStatus requestStatus = setStatusAfterError(joinPoint, integrationControlEntity);
             integrationControlEntity.setStatus(requestStatus);
-            log.error("Erro ao processar integração para resale {}. Status atualizado para {}.", resale.uuid(), requestStatus);
+            log.error("Error processing integration for resale UUID: {}. Updated status to {}", resale.uuid(), requestStatus);
             throw ex;
-
         } finally {
             integrationControlEntity.setAttempts(integrationControlEntity.getAttempts() + 1);
+            log.info("Saving integration control with updated attempts: {} for resale UUID: {}", integrationControlEntity.getAttempts(), resale.uuid());
             integrationControlService.save(integrationControlEntity);
         }
     }
 
     private static RequestStatus setStatusAfterError(ProceedingJoinPoint joinPoint, IntegrationControlEntity integrationControlEntity) {
-        int maxTentativas = getMaxTentativas(joinPoint);
-        boolean excedeuLimiteDeTentativas = excedeuLimiteDeTentativas(integrationControlEntity, maxTentativas);
-        if (excedeuLimiteDeTentativas) {
-            log.info("A integração {} para a resale {} excedeu o limite maximo para reprocessamento automatico!",
-                    integrationControlEntity.getUuid(), integrationControlEntity.getResale().getUuid());
+        int maxAttempts = getMaxAttempts(joinPoint);
+        boolean exceededAttemptLimit = exceededAttemptLimit(integrationControlEntity, maxAttempts);
+        if (exceededAttemptLimit) {
+            log.warn("Integration {} for resale UUID {} exceeded the maximum retry limit!", integrationControlEntity.getUuid(), integrationControlEntity.getResale().getUuid());
         }
-        return excedeuLimiteDeTentativas ? RequestStatus.ERRO : RequestStatus.REPROCESSAR;
+        return exceededAttemptLimit ? RequestStatus.ERRO : RequestStatus.REPROCESSAR;
     }
 
-    private static boolean excedeuLimiteDeTentativas(IntegrationControlEntity integrationControlEntity, int maxTentativas) {
-        return integrationControlEntity.getAttempts() >= maxTentativas;
+    private static boolean exceededAttemptLimit(IntegrationControlEntity integrationControlEntity, int maxAttempts) {
+        return integrationControlEntity.getAttempts() >= maxAttempts;
     }
 
-    private static int getMaxTentativas(ProceedingJoinPoint joinPoint) {
+    private static int getMaxAttempts(ProceedingJoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         UpdateIntegration annotation = method.getAnnotation(UpdateIntegration.class);

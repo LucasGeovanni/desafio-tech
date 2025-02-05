@@ -1,8 +1,8 @@
 package dev.lucas.desafiotech.service.impl;
 
-import dev.lucas.desafiotech.api.v1.mock.OrderAddressSupplierRequest;
-import dev.lucas.desafiotech.api.v1.mock.SupplierRequest;
-import dev.lucas.desafiotech.api.v1.mock.OrderItemSupplier;
+import dev.lucas.desafiotech.controller.mock.OrderAddressSupplierRequest;
+import dev.lucas.desafiotech.controller.mock.SupplierRequest;
+import dev.lucas.desafiotech.controller.mock.OrderItemSupplier;
 import dev.lucas.desafiotech.client.SupplierClient;
 import dev.lucas.desafiotech.mappers.OrderSupplierMapper;
 import dev.lucas.desafiotech.model.domain.Resale;
@@ -25,15 +25,13 @@ public class OrderSupplierServiceImpl implements OrderSupplierService {
     @Override
     @UpdateIntegration(maxAttempts = 5)
     public void createOrderSupplier(Resale resale) {
-        log.info("Criando order fornecedor para a resale UUID: {}", resale.uuid());
+        log.info("Creating supplier order for resale UUID: {}", resale.uuid());
         try {
-
             List<OrderItemSupplier> itensOrders = consolidateOrders(resale);
             fornecedorClient.solicitacaoOrder(new SupplierRequest(resale.uuid(), itensOrders, mapAddress(resale)));
-            log.info("Order para fornecedor {} criado com sucesso!", resale.uuid());
-
+            log.info("Supplier order {} created successfully!", resale.uuid());
         } catch (Exception e) {
-            log.error("Erro ao criar order para fornecedor. Resale UUID: {}, Erro: {}", resale.uuid(), e.getMessage());
+            log.error("Error creating supplier order. Resale UUID: {}, Error: {}", resale.uuid(), e.getMessage());
             throw e;
         }
     }
@@ -50,5 +48,4 @@ public class OrderSupplierServiceImpl implements OrderSupplierService {
                 .findFirst()
                 .map(orderSupplierMapper::to).orElse(null);
     }
-
 }
