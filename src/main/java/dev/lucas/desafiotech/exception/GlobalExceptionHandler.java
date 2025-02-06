@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "dev.lucas.desafiotech")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
